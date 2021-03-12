@@ -1,0 +1,9 @@
+HTTP/1.0 200 OK
+Content-Length: 127
+Content-Type: text/html
+
+<html><head><title>Lab 2 test pages</title></head>
+<body>
+This is a test text.
+<a href="pic.html">test link</a>
+</body></html>
