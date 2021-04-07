@@ -1,16 +1,3 @@
-/**
- * ToreroServe: A Lean Web Server
- * COMP 375 - Project 02
- *
- * This program should take two arguments:
- * 	1. The port number on which to bind and listen for connections
- * 	2. The directory out of which to serve files.
- *
- * 	TODO: update author info with names and USD email addresses
- *
- * Author 1: Henry Berger hberger@sandiego.edu
- * Author 2: Nico Dennis ndennis@sandiego.edu
- */
 
 // standard C libraries
 #include <cstdio>
@@ -61,6 +48,7 @@ using std::stringstream;
 using std::filesystem::path;
 using std::filesystem::exists;
 using std::filesystem::is_regular_file;
+using std::filesystem::is_directory;
 
 // This will limit how many clients can be waiting for a connection.
 static const int BACKLOG = 10;
@@ -245,26 +233,19 @@ void sendHTML(int sock, path file){
 	// Vector to hold the names of the files in the given directory
 	vector<string> filenames;
 	string tempName = file;
-	DIR *givenDir;
-	struct dirent *currFile;
 	
 	// Searches the given directory and adds all files and directories to the
 	// vector
-	if ((givenDir = opendir(tempName.c_str())) != NULL) {
-		while ((currFile = readdir(givenDir)) != NULL) {
-			if (std::filesystem::is_regular_file(currFile->d_name)) {
-				filenames.push_back(currFile->d_name);
-			} 
-			else {
-				string directory_name = currFile->d_name;
-				directory_name += "/";
-				filenames.push_back(directory_name);
-			}
+	for (auto& entry: fs::directory_iterator(tempName)) {
+		if (is_directory(entry.path())) {
+			string directory_name = entry.path().filename();
+			directory_name += "/";
+			filenames.push_back(directory_name);
 		}
-		closedir(givenDir);
-	} else {
-		cout << "ERROR: Could not open directory" << "\n";
-	}
+		else {
+			filenames.push_back(entry.path().filename());
+		}
+	}	
 
 	// Adds generated links to HTML from the vector
 	for(string s : filenames){
@@ -329,6 +310,10 @@ void handleClient(const int client_sock) {
 				sendHTML(client_sock, fullPath);
 			}
 		}
+	}
+	// File does not exist
+	else {
+		sendFileNotFound(client_sock);
 	}
 	
 	// Close client socket 	
